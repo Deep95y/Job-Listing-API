@@ -258,7 +258,7 @@ app.post('/Jobs',verifyToken, async (req, res, next) => {
   });
 
   app.get("/getAlljobs", async(req, res, next) => {
-    console.log("response");
+    
     try{
       const position = req.query.position|| " ";
       const skills = req.query.skills;
