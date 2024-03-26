@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 //const bcrypt = require('bcrypt')
 const cors = require('cors')
 const jwt = require('jsonwebtoken')
-const PORT = 5001;//
+const PORT = 5002;//
 //const dotenv = require("dotenv");
 
 
@@ -14,17 +14,18 @@ app.get("/", (req, res) => {
   });
 
 const verifyToken = (req, res, next) => {
-    
+   
     try{
   const headerToken = req.headers["authorization"];
+  console.log(headerToken);
   if(!headerToken) {
     return res.status(401).json({
       message: "Unauthorized  access"
     });
   }
     const decode = jwt.verify(headerToken, process.env.jwToken );
-    console.log("this");
-    console.log(decode._id); 
+    // console.log("this");
+    // console.log(decode._id); 
 
     req.userId = decode._id;
     next();
@@ -36,11 +37,11 @@ const verifyToken = (req, res, next) => {
         });
     }
 };
-  
-app.use(express.json()); //
 
+app.use(express.json()); 
+app.use(cors()); 
    const JobSchema = new mongoose.Schema({
-
+//vaha 2 field daaloge toh model ke schema me bhi dalna padega na?yes i know, do fast baby break dona yar plz 2 min ka kaam h yaar ok
     CompanyName: {
       type: String,
       required: true,
@@ -64,7 +65,12 @@ app.use(express.json()); //
         type: String,
         required: true,
       },
-      
+
+    LocationType: {
+        type: String,
+        required: true,
+      },
+  
     JobLocation: {
         type: String,
         required: true,
@@ -82,6 +88,10 @@ app.use(express.json()); //
         required: true
         
       },
+      Information: {
+        type: String,
+        required: true,
+      },
       refUserId: {
         type: mongoose.ObjectId,
     },
@@ -95,7 +105,7 @@ app.get("/myjobs", async (req, res) => {
       res.json(data); 
     } catch (error) {
       console.log(error);
-      res.status(500).json({ //
+      res.status(500).json({ 
         message: "Something went wrong!",
       });
     }
@@ -103,54 +113,65 @@ app.get("/myjobs", async (req, res) => {
 
 app.post('/Jobs',verifyToken, async (req, res, next) => {
     try { 
+      console.log(req.body);
         const { 
             CompanyName, 
             LogoUrl,
             Position,
             MonthlySalary,
             JobType,
-            JobLocation,
-            JobDescription,
+            LocationType,
+            JobLocation,   
+            JobDescription, 
             AboutCompany,
-            Skills, 
+            Skills,
+            Information,
             refUserId} = req.body;
+
         if (
             !CompanyName ||
             !LogoUrl ||
             !Position ||
             !MonthlySalary ||
             !JobType ||
+            !LocationType||
             !JobLocation ||
             !JobDescription ||
             !AboutCompany||
             !Skills||
+            !Information||
             !refUserId
-        ) {
+        ) {//information is missing here
             return res.status(400).json({
                 errorMessage: "Bad request",
             });
         } 
+        console.log("checkpoint1");
       const userId = req.userId; 
-      const Jobdata = await model.create({ // baby mera get aur upate wala code bhi check karloge kya 
+      const Jobdata = await model.create({
         CompanyName,
         LogoUrl,
         Position,
         MonthlySalary,
         JobType,
+        LocationType,
         JobLocation,
         JobDescription,
         AboutCompany,
         Skills,
+        Information,
         refUserId: userId
       });
       await Jobdata.save();
     //   console.log(Jobdata); 
+    console.log("checkpoint2");
+
       res.json({
         status: "Job created successfully"
       }); 
     } catch (error) {
-        next(error);
       console.log(error);
+      next(error);
       res.status(500).json({
         status: 'FAILED', 
         message: 'Something went wrong!'
@@ -180,8 +201,8 @@ app.post('/Jobs',verifyToken, async (req, res, next) => {
     try {
         const jobId = req.query.id;
         const userId = req.userId; 
-        console.log(jobId);
-        console.log(userId);
+        //console.log(jobId);
+        //console.log(userId);
 
         if (!jobId) {
             return res.status(400).json({
@@ -204,20 +225,25 @@ app.post('/Jobs',verifyToken, async (req, res, next) => {
           Position,
           MonthlySalary,
           JobType,
+          LocationType,
           JobLocation,
           JobDescription,
           AboutCompany,
-          Skills} = req.body;
+          Skills,
+          Information
+        } = req.body;
       if (
           !CompanyName ||//
           !LogoUrl ||
           !Position ||
           !MonthlySalary ||
           !JobType ||
+          !LocationType||
           !JobLocation ||
           !JobDescription ||
           !AboutCompany||
-          !Skills
+          !Skills||
+          !Information
         
       ) {
           return res.status(400).json({
@@ -234,10 +260,12 @@ app.post('/Jobs',verifyToken, async (req, res, next) => {
           Position,
           MonthlySalary,
           JobType,
+          LocationType,
           JobLocation,
           JobDescription,
           AboutCompany,
-          Skills
+          Skills,
+          Information
           }
         })
         res.json({
@@ -257,20 +285,30 @@ app.post('/Jobs',verifyToken, async (req, res, next) => {
       .catch((error) => console.log(error));
   });
 
-  app.get("/getAlljobs", async(req, res, next) => {
-    
-    try{
-      const position = req.query.position|| " ";
-      const skills = req.query.skills;
-      let filter = {};
-      if (skills) {
-        let filteredskills = skills.split(",");
-        const caseInsensetive = filteredskills.map((element) => new RegExp(element, "i"));
-        filter = {skills: {$in: caseInsensetive}};
-      }
+  app.get("/getAlljobs", async (req, res, next) => {
+    try {
+        const Position = req.query.Position || " ";
+        const skills = req.query.Skills; 
+        let filter = {};
+        
+        if (skills) {
+            let filteredSkills = skills.split(",");
+            const caseInsensitive = filteredSkills.map((element) => new RegExp(element, "i"));
+            console.log(caseInsensitive);
+            filter = { Skills: { $in: caseInsensitive } }; 
+        }
+        // console.log(filter);
+        const jobSort = await model.find(
+            {
+                Position: { $regex: Position, $options: "i" },
+                ...filter,
+            },
+            { CompanyName: 1, Position: 1 }
+        );
 
-    }catch(error){
+        res.json({ data: jobSort });
 
+    } catch (error) {
+        next(error);
     }
-  })
-  
+});

@@ -7,7 +7,7 @@ dotenv.config();
 
 console.log(process.env.MONGODB_URL);
 
-const PORT = 5000; //samjha na ab? anything else? tum
+const PORT = 5001;
 // Use built-in express middleware for parsing URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 

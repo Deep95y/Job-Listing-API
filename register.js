@@ -47,7 +47,7 @@ const isLoggedIn = (req, res, next) => {
 };
 
 
-app.use(cors());
+app.use(cors()); 
 // app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(bodyParser.json());
 app.use(express.json())
@@ -146,7 +146,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", isLoggedIn, async (req, res) => {
+app.get("/profile", isLoggedIn, async (req, res) => {// where the fuck is my page 
   try {
     res.json({
       status: "PROFILE PAGE",
